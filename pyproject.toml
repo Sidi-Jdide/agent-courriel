@@ -16,3 +16,4 @@ ignore = ["E501"]  # lignes longues gérées par le formateur ; les textes du pr
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,4 +1,5 @@
 """Orchestrateur : récupère les courriels, les analyse et décide de l'action."""
+
 from __future__ import annotations
 
 import logging
@@ -73,8 +74,18 @@ class Agent:
 
         if not self.simulation:
             self.gmail.etiqueter(c.id, etiquettes)
-        self.memoire.enregistrer(c.id, c.adresse, c.sujet, a.categorie, a.priorite, action, a.raison,
-                                 resume=a.resume, reponse=a.reponse, brouillon_id=brouillon_id)
+        self.memoire.enregistrer(
+            c.id,
+            c.adresse,
+            c.sujet,
+            a.categorie,
+            a.priorite,
+            action,
+            a.raison,
+            resume=a.resume,
+            reponse=a.reponse,
+            brouillon_id=brouillon_id,
+        )
         log.info("[%s] %s | %s | %s", action.upper(), c.adresse, c.sujet, a.resume)
         if self.simulation and a.reponse:
             log.info("--- Réponse proposée ---\n%s\n-----------------------", a.reponse)

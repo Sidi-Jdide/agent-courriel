@@ -1,4 +1,5 @@
 """Configuration lue depuis les variables d'environnement (fichier .env)."""
+
 from __future__ import annotations
 
 import os

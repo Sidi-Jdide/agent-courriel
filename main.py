@@ -6,6 +6,7 @@ Exemples :
     python main.py --boucle 300        # vérifie la boîte toutes les 5 minutes
     python main.py --journal           # affiche les derniers courriels traités
 """
+
 from __future__ import annotations
 
 import argparse
@@ -51,7 +52,9 @@ def main() -> int:
         prompt_systeme(cfg.nom_entreprise, cfg.signature, cfg.connaissances()),
     )
     agent = Agent(gmail, cerveau, memoire, cfg, simulation=args.simulation)
-    logging.info("Agent démarré pour %s (envoi auto : %s)", agent.moi, "OUI" if cfg.envoi_auto else "non, brouillons seulement")
+    logging.info(
+        "Agent démarré pour %s (envoi auto : %s)", agent.moi, "OUI" if cfg.envoi_auto else "non, brouillons seulement"
+    )
 
     while True:
         bilan = agent.cycle()

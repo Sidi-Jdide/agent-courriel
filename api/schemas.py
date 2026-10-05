@@ -1,4 +1,5 @@
 """Schémas Pydantic : contrat de l'API (visible dans /docs)."""
+
 from __future__ import annotations
 
 from typing import Literal
@@ -39,8 +40,9 @@ class Statistiques(BaseModel):
 
 
 class Approbation(BaseModel):
-    texte: str | None = Field(default=None, max_length=20_000,
-                              description="Texte modifié. Absent : le brouillon est envoyé tel quel.")
+    texte: str | None = Field(
+        default=None, max_length=20_000, description="Texte modifié. Absent : le brouillon est envoyé tel quel."
+    )
 
 
 class BilanCycle(BaseModel):

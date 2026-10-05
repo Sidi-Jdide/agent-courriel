@@ -1,0 +1,18 @@
+[project]
+name = "agent-courriel"
+version = "1.0.0"
+description = "Agent IA de réponse aux courriels : Gmail + Claude, FastAPI, Vue 3"
+requires-python = ">=3.13"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+extend-exclude = ["frontend"]
+
+[tool.ruff.lint]
+# pycodestyle, pyflakes, imports, modernisation, bugs probables, simplifications
+select = ["E", "W", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]  # lignes longues gérées par le formateur ; les textes du prompt restent lisibles
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

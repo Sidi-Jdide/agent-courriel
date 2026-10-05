@@ -1,4 +1,5 @@
 """Tests sans Gmail ni Claude réels (faux objets). Lancer : pytest -q"""
+
 import base64
 from types import SimpleNamespace
 
@@ -44,19 +45,39 @@ class FauxCerveau:
 
 def cfg(envoi_auto=False):
     return SimpleNamespace(
-        envoi_auto=envoi_auto, categories_envoi_auto=["question_frequente"], domaines_bloques=["spam.com"],
-        requete_gmail="", max_par_cycle=10, etiquette="Agent-IA",
+        envoi_auto=envoi_auto,
+        categories_envoi_auto=["question_frequente"],
+        domaines_bloques=["spam.com"],
+        requete_gmail="",
+        max_par_cycle=10,
+        etiquette="Agent-IA",
     )
 
 
 def courriel(id="1", adresse="client@exemple.com", en_tetes=None):
-    return Courriel(id, "t" + id, f"Client <{adresse}>", adresse, "Heures d'ouverture ?", "", "Bonjour, vos heures ?",
-                    en_tetes=en_tetes or {})
+    return Courriel(
+        id,
+        "t" + id,
+        f"Client <{adresse}>",
+        adresse,
+        "Heures d'ouverture ?",
+        "",
+        "Bonjour, vos heures ?",
+        en_tetes=en_tetes or {},
+    )
 
 
 def analyse(**kw):
-    base = dict(categorie="question_frequente", priorite="normale", resume="Demande les heures", doit_repondre=True,
-                envoi_auto_ok=True, confiance=0.95, reponse="Bonjour, nous sommes ouverts de 9 h à 17 h.", raison="FAQ")
+    base = dict(
+        categorie="question_frequente",
+        priorite="normale",
+        resume="Demande les heures",
+        doit_repondre=True,
+        envoi_auto_ok=True,
+        confiance=0.95,
+        reponse="Bonjour, nous sommes ouverts de 9 h à 17 h.",
+        raison="FAQ",
+    )
     base.update(kw)
     return Analyse(**base)
 
@@ -90,8 +111,12 @@ def test_confiance_faible_donne_brouillon(tmp_path):
 
 
 def test_robots_et_infolettres_ignores_sans_appeler_ia(tmp_path):
-    cs = [courriel("1", "no-reply@banque.com"), courriel("2", en_tetes={"list-unsubscribe": "<x>"}),
-          courriel("3", "a@spam.com"), courriel("4", "moi@entreprise.com")]
+    cs = [
+        courriel("1", "no-reply@banque.com"),
+        courriel("2", en_tetes={"list-unsubscribe": "<x>"}),
+        courriel("3", "a@spam.com"),
+        courriel("4", "moi@entreprise.com"),
+    ]
     ag, g, cer = faire_agent(cs, analyse(), tmp_path=tmp_path)
     assert ag.cycle() == {"ignoré": 4}
     assert cer.appels == 0
@@ -129,17 +154,32 @@ def test_une_erreur_n_arrete_pas_l_agent(tmp_path):
 
 
 def test_cerveau_lit_la_reponse_de_l_outil():
-    entree = dict(categorie="demande_rdv", priorite="haute", resume="r", doit_repondre=True, envoi_auto_ok=False,
-                  confiance=0.7, reponse="  Bonjour  ", raison="x")
-    client = SimpleNamespace(messages=SimpleNamespace(
-        create=lambda **kw: SimpleNamespace(content=[SimpleNamespace(type="tool_use", input=entree)])))
+    entree = dict(
+        categorie="demande_rdv",
+        priorite="haute",
+        resume="r",
+        doit_repondre=True,
+        envoi_auto_ok=False,
+        confiance=0.7,
+        reponse="  Bonjour  ",
+        raison="x",
+    )
+    client = SimpleNamespace(
+        messages=SimpleNamespace(
+            create=lambda **kw: SimpleNamespace(content=[SimpleNamespace(type="tool_use", input=entree)])
+        )
+    )
     a = Cerveau(client, "m", "s").analyser(courriel())
     assert a.categorie == "demande_rdv" and a.reponse == "Bonjour"
 
 
 def test_extraction_corps_html_et_citations():
-    b64 = lambda s: base64.urlsafe_b64encode(s.encode()).decode()
-    payload = {"mimeType": "multipart/alternative", "parts": [
-        {"mimeType": "text/html", "body": {"data": b64("<p>Salut&nbsp;!</p><br>Merci")}}]}
+    def b64(s):
+        return base64.urlsafe_b64encode(s.encode()).decode()
+
+    payload = {
+        "mimeType": "multipart/alternative",
+        "parts": [{"mimeType": "text/html", "body": {"data": b64("<p>Salut&nbsp;!</p><br>Merci")}}],
+    }
     assert "Salut" in extraire_corps(payload) and "<p>" not in extraire_corps(payload)
     assert retirer_citations("Oui merci\n\nLe 3 oct. 2026, Marie a écrit :\n> vieux") == "Oui merci"

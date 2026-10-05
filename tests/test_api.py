@@ -1,4 +1,5 @@
 """Tests de l'API FastAPI (TestClient, aucune connexion réseau)."""
+
 import pytest
 from fastapi.testclient import TestClient
 

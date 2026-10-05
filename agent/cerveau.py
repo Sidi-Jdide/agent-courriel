@@ -1,4 +1,5 @@
 """La partie « IA » : Claude analyse le courriel et rédige une réponse."""
+
 from __future__ import annotations
 
 from .modeles import CATEGORIES, Analyse, Courriel
@@ -18,10 +19,22 @@ OUTIL = {
                 "description": "Vrai seulement si la réponse est sans risque et entièrement couverte par la base de connaissances.",
             },
             "confiance": {"type": "number", "description": "Confiance dans la réponse, de 0 à 1."},
-            "reponse": {"type": "string", "description": "Corps de la réponse, signature incluse. Vide si doit_repondre est faux."},
+            "reponse": {
+                "type": "string",
+                "description": "Corps de la réponse, signature incluse. Vide si doit_repondre est faux.",
+            },
             "raison": {"type": "string", "description": "Courte justification des choix."},
         },
-        "required": ["categorie", "priorite", "resume", "doit_repondre", "envoi_auto_ok", "confiance", "reponse", "raison"],
+        "required": [
+            "categorie",
+            "priorite",
+            "resume",
+            "doit_repondre",
+            "envoi_auto_ok",
+            "confiance",
+            "reponse",
+            "raison",
+        ],
     },
 }
 
@@ -60,7 +73,7 @@ Analyse ce courriel avec l'outil analyser_courriel."""
 
 class Cerveau:
     def __init__(self, client, modele: str, systeme: str):
-        self.client = client          # anthropic.Anthropic()
+        self.client = client  # anthropic.Anthropic()
         self.modele = modele
         self.systeme = systeme
 

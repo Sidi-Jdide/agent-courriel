@@ -1,8 +1,9 @@
 """Démarre le serveur.
 
-    python -m api --demo     # données fictives : ni Gmail ni clé API
-    python -m api            # vraie base + Gmail + Claude
+python -m api --demo     # données fictives : ni Gmail ni clé API
+python -m api            # vraie base + Gmail + Claude
 """
+
 from __future__ import annotations
 
 import argparse
@@ -32,6 +33,7 @@ def services_reels(cfg: Config) -> Services:
     def gmail():
         if "gmail" not in cache:
             from agent.gmail_client import Gmail, connecter
+
             cache["gmail"] = Gmail(connecter(cfg.credentials_path, cfg.token_path))
         return cache["gmail"]
 
@@ -41,13 +43,16 @@ def services_reels(cfg: Config) -> Services:
 
             from agent.agent import Agent
             from agent.cerveau import Cerveau, prompt_systeme
-            cerveau = Cerveau(anthropic.Anthropic(api_key=cfg.anthropic_api_key), cfg.modele,
-                              prompt_systeme(cfg.nom_entreprise, cfg.signature, cfg.connaissances()))
+
+            cerveau = Cerveau(
+                anthropic.Anthropic(api_key=cfg.anthropic_api_key),
+                cfg.modele,
+                prompt_systeme(cfg.nom_entreprise, cfg.signature, cfg.connaissances()),
+            )
             cache["agent"] = Agent(gmail(), cerveau, memoire, cfg)
         return cache["agent"]
 
-    return Services(memoire, gmail, lambda: agent().cycle(), mode="gmail",
-                    envoi_auto=cfg.envoi_auto, modele=cfg.modele)
+    return Services(memoire, gmail, lambda: agent().cycle(), mode="gmail", envoi_auto=cfg.envoi_auto, modele=cfg.modele)
 
 
 def main():

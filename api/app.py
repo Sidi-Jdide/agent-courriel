@@ -1,11 +1,12 @@
 """Application FastAPI : routes REST + service de l'application Vue compilée."""
+
 from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from fastapi import APIRouter, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +24,7 @@ DOSSIER_FRONTEND = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 @dataclass
 class Services:
     """Dépendances injectées : permet de brancher Gmail réel, le mode démo ou des faux objets en test."""
+
     memoire: Memoire
     fournir_gmail: Callable[[], object]
     lancer_cycle: Callable[[], dict[str, int]]
@@ -38,8 +40,12 @@ def creer_app(services: Services, servir_frontend: bool = True) -> FastAPI:
         version="1.0.0",
     )
     # Pour le développement : le serveur Vite (port 5173) appelle l'API.
-    app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-                       allow_methods=["*"], allow_headers=["*"])
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     api = APIRouter(prefix="/api")
     m = services.memoire
@@ -71,7 +77,9 @@ def creer_app(services: Services, servir_frontend: bool = True) -> FastAPI:
         filtres = dict(action=action, categorie=categorie, statut=statut, recherche=q)
         return PageCourriels(
             elements=m.lister(**filtres, limite=taille, decalage=(page - 1) * taille),
-            total=m.compter(**filtres), page=page, taille=taille,
+            total=m.compter(**filtres),
+            page=page,
+            taille=taille,
         )
 
     @api.get("/courriels/{mid}", response_model=Courriel, tags=["courriels"])

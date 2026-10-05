@@ -1,4 +1,5 @@
 """Accès à Gmail : lire, étiqueter, créer des brouillons et envoyer."""
+
 from __future__ import annotations
 
 import base64
@@ -152,9 +153,14 @@ class Gmail:
             if e["name"] == nom:
                 self._etiquettes[nom] = e["id"]
                 return e["id"]
-        nouvelle = self.s.users().labels().create(
-            userId="me", body={"name": nom, "labelListVisibility": "labelShow", "messageListVisibility": "show"}
-        ).execute()
+        nouvelle = (
+            self.s.users()
+            .labels()
+            .create(
+                userId="me", body={"name": nom, "labelListVisibility": "labelShow", "messageListVisibility": "show"}
+            )
+            .execute()
+        )
         self._etiquettes[nom] = nouvelle["id"]
         return nouvelle["id"]
 

@@ -1,0 +1,65 @@
+:root {
+  --fond: #f6f4ef;
+  --surface: #ffffff;
+  --encre: #1d1f1e;
+  --doux: #66696a;
+  --ligne: #e4e1d8;
+  --accent: #0f6b5c;
+  --accent-fond: #e3f1ed;
+  --ambre: #9a5b00;
+  --ambre-fond: #fbefd9;
+  --rouge: #a8322a;
+  --rouge-fond: #fbe5e2;
+  --gris-fond: #eeece6;
+  --rayon: 10px;
+  --police: ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #141615;
+    --surface: #1d201f;
+    --encre: #ecebe6;
+    --doux: #9a9d9b;
+    --ligne: #2e3230;
+    --accent: #5cc4ae;
+    --accent-fond: #183530;
+    --ambre: #f0b65c;
+    --ambre-fond: #3a2c15;
+    --rouge: #f08a80;
+    --rouge-fond: #3d1f1c;
+    --gris-fond: #262a28;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--fond); color: var(--encre); font: 15px/1.5 var(--police); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+
+h1 { font-size: 24px; letter-spacing: -0.02em; line-height: 1.25; margin: 0; }
+.surtitre { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--doux); font-weight: 600; margin: 0 0 12px; }
+.carte { background: var(--surface); border: 1px solid var(--ligne); border-radius: var(--rayon); padding: 18px; }
+
+.bouton {
+  display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px;
+  border: 1px solid transparent; border-radius: 8px; padding: 9px 16px; cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+}
+.bouton:disabled { opacity: 0.55; cursor: default; }
+.bouton.principal { background: var(--accent); color: var(--surface); }
+.bouton.principal:not(:disabled):hover { filter: brightness(1.08); }
+.bouton.secondaire { background: var(--surface); border-color: var(--ligne); }
+.bouton.secondaire:not(:disabled):hover { background: var(--gris-fond); }
+.bouton:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+.champ { padding: 9px 12px; border: 1px solid var(--ligne); border-radius: 8px; background: var(--surface); }
+
+.entete-page { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.entete-page p { margin: 4px 0 0; color: var(--doux); }
+
+.squelette { background: var(--gris-fond); border-radius: 6px; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .squelette { animation: none; } }

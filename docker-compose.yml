@@ -1,0 +1,37 @@
+# Démo :           docker compose up --build demo      → http://localhost:8000
+# Production :     docker compose up --build agent     (après la première connexion Gmail en local,
+#                  pour que token.json existe déjà)
+services:
+  demo:
+    build: .
+    ports: ["8000:8000"]
+
+  agent:
+    build: .
+    command: ["python", "-m", "api", "--hote", "0.0.0.0"]
+    ports: ["127.0.0.1:8000:8000"]
+    env_file: .env
+    environment:
+      BASE_DONNEES: /app/donnees/agent.db
+      GMAIL_CREDENTIALS: /app/secrets/credentials.json
+      GMAIL_TOKEN: /app/secrets/token.json
+    volumes:
+      - ./donnees:/app/donnees
+      - ./credentials.json:/app/secrets/credentials.json:ro
+      - ./token.json:/app/secrets/token.json
+    restart: unless-stopped
+
+  # Vérifie la boîte toutes les 5 minutes, en parallèle de l'interface.
+  verificateur:
+    build: .
+    command: ["python", "main.py", "--boucle", "300"]
+    env_file: .env
+    environment:
+      BASE_DONNEES: /app/donnees/agent.db
+      GMAIL_CREDENTIALS: /app/secrets/credentials.json
+      GMAIL_TOKEN: /app/secrets/token.json
+    volumes:
+      - ./donnees:/app/donnees
+      - ./credentials.json:/app/secrets/credentials.json:ro
+      - ./token.json:/app/secrets/token.json
+    restart: unless-stopped

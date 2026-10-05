@@ -1,0 +1,10 @@
+.env
+credentials.json
+token.json
+*.db
+__pycache__/
+.pytest_cache/
+.venv/
+frontend/node_modules/
+frontend/dist/
+donnees/

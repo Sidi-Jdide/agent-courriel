@@ -1,62 +1,108 @@
 # Agent IA de réponse aux courriels
 
-Un agent qui surveille une boîte Gmail, comprend chaque courriel avec **Claude** (Anthropic), le classe et prépare
-une réponse. Par défaut, il crée des **brouillons** : un humain les valide dans une interface web avant l'envoi.
+[![CI](https://github.com/Sidi-Jdide/agent-courriel/actions/workflows/ci.yml/badge.svg)](https://github.com/Sidi-Jdide/agent-courriel/actions/workflows/ci.yml)
+![Python 3.13](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Vue 3](https://img.shields.io/badge/Vue_3-TypeScript-4FC08D?logo=vuedotjs&logoColor=white)
+![Claude](https://img.shields.io/badge/IA-Claude_(Anthropic)-D97757)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
-**Stack :** Python 3.13 · FastAPI · Pydantic · SQLite · API Gmail · API Claude · Vue 3 · TypeScript · Vite · Vue Router · Docker
+Un agent qui surveille une boîte Gmail, comprend chaque courriel avec **Claude** (Anthropic), le classe et prépare une
+réponse. L'IA propose, **un humain valide** : les réponses arrivent en brouillon dans une interface web où l'on peut
+les corriger, les approuver ou les rejeter.
 
-## Démarrage rapide (mode démo, sans Gmail ni clé API)
+![Tableau de bord](docs/captures/tableau-de-bord.png)
+
+## Essayer en une commande
+
+Le mode démo fonctionne sans compte Gmail ni clé API (données fictives) :
+
+```bash
+docker compose up --build demo
+```
+
+Puis ouvrir **http://localhost:8000** (interface) et **http://localhost:8000/docs** (API interactive Swagger).
+
+<details>
+<summary>Sans Docker</summary>
 
 ```bash
 pip install -r requirements.txt
 cd frontend && npm install && npm run build && cd ..
 python -m api --demo
 ```
+</details>
 
-Ouvrir **http://127.0.0.1:8000** (interface) et **http://127.0.0.1:8000/docs** (documentation interactive de l'API).
+## Ce que fait l'agent
 
-Ou avec Docker : `docker compose up --build demo`
+| | |
+|---|---|
+| **Trie sans IA d'abord** | no-reply, infolettres, réponses automatiques et domaines bloqués sont écartés gratuitement, avant tout appel à l'IA. |
+| **Analyse avec Claude** | catégorie, priorité, résumé, réponse rédigée, niveau de confiance et justification, en sortie JSON garantie. |
+| **Répond avec vos informations** | Claude s'appuie uniquement sur une base de connaissances ([`connaissances.md`](connaissances.md)) ; s'il ne sait pas, il transmet à l'équipe. |
+| **Laisse la décision à un humain** | brouillon dans le bon fil Gmail ; l'utilisateur le modifie puis l'approuve (envoi) ou le rejette. |
+| **Explique ses choix** | chaque décision est justifiée et visible dans l'interface. |
 
-## Fonctionnement
-
-```
-Gmail ──► filtres sans IA ──► Claude (analyse structurée) ──► règles de sécurité ──► brouillon / envoi / classement
-            (robots,             catégorie, priorité,           (code, pas l'IA)              │
-             infolettres)        résumé, réponse                                              ▼
-                                                                         SQLite ◄──► API FastAPI ◄──► Interface Vue
-                                                                                                    (validation humaine)
-```
-
-1. Récupère les courriels non lus.
-2. **Filtre sans IA** (gratuit) : no-reply, infolettres, réponses automatiques, ses propres courriels, domaines bloqués.
-3. **Claude analyse** via *tool use* : sortie JSON garantie (catégorie, priorité, résumé, réponse, confiance, justification).
-4. **Le code décide** : rien à répondre → étiquette ; cas normal → brouillon dans le bon fil ; cas simple et sûr →
-   envoi automatique (seulement si `ENVOI_AUTO=true`).
-5. **Un humain valide** dans l'interface : il modifie la réponse si besoin, puis l'approuve (envoi Gmail) ou la rejette.
+![Validation d'un brouillon](docs/captures/validation.png)
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    G[Gmail] --> F["Filtres sans IA<br/>(robots, infolettres)"]
+    F --> C["Claude<br/>analyse structurée"]
+    C --> R["Règles de sécurité<br/>(dans le code)"]
+    R -->|cas sûr + envoi auto activé| E[Envoi]
+    R -->|cas normal| B[Brouillon Gmail]
+    R -->|rien à répondre| L[Étiquette]
+    R --> DB[(SQLite)]
+    DB <--> API[API FastAPI] <--> UI["Interface Vue 3<br/>validation humaine"]
+    UI -->|approuver / rejeter| B
 ```
-agent/                    cœur métier (indépendant du web)
-  config.py               réglages (.env)
-  gmail_client.py         API Gmail : lecture, brouillons, envoi, étiquettes
-  cerveau.py              Claude : prompt système + outil d'analyse structurée
-  agent.py                orchestration + règles de sécurité
-  memoire.py              SQLite (verrou multi-thread, migration automatique)
-  demo.py                 données fictives
-api/                      backend FastAPI
-  app.py                  routes REST, injection des dépendances, service du frontend
-  schemas.py              contrats Pydantic (→ OpenAPI / Swagger)
-  __main__.py             démarrage : python -m api [--demo]
-frontend/                 application Vue 3 + TypeScript
-  src/api.ts              client HTTP typé, gestion d'erreurs
-  src/views/              Tableau de bord, Historique, Détail
-  src/components/         liste, badges, notifications
-main.py                   agent en ligne de commande (--simulation, --boucle, --journal)
-tests/                    tests Python (pytest)
-Dockerfile                build multi-étapes (Node → Python)
-docker-compose.yml        démo, API, vérificateur périodique
+
 ```
+agent/               cœur métier, indépendant du web
+  agent.py           orchestration + règles de sécurité
+  cerveau.py         Claude : prompt système + outil d'analyse structurée
+  gmail_client.py    API Gmail : lecture, brouillons, envoi, étiquettes
+  memoire.py         SQLite (verrou multi-thread, migration automatique)
+  config.py          réglages (.env)
+  demo.py            données fictives
+api/                 backend FastAPI
+  app.py             routes REST, injection des dépendances, service du frontend
+  schemas.py         contrats Pydantic (→ OpenAPI / Swagger)
+frontend/            Vue 3 + TypeScript + Vite + Vue Router
+  src/api.ts         client HTTP typé, gestion des erreurs
+  src/views/         tableau de bord, historique, détail
+  src/composables/   état partagé (tableau, notifications)
+tests/               pytest : agent, sécurité, API
+main.py              agent en ligne de commande (--simulation, --boucle, --journal)
+```
+
+## Choix techniques
+
+**L'IA propose, le code décide.** Claude peut dire qu'une réponse est sûre, mais l'envoi automatique exige en plus,
+côté code, une confiance ≥ 0,85, une catégorie autorisée et une priorité non haute. Les plaintes et les paiements ne
+partent jamais seuls. Une règle de sécurité ne doit pas dépendre d'un modèle probabiliste.
+
+**Sortie structurée par *tool use*.** Plutôt que d'analyser du texte libre, l'agent force Claude à appeler un outil
+au schéma JSON strict (`tool_choice`). Les valeurs sont ensuite revalidées (catégorie inconnue → `autre`).
+
+**Protection contre l'injection de prompt.** Le courriel est encadré par des balises et présenté comme une donnée. Une
+tentative de détournement fait passer la réponse en validation humaine et est signalée dans la justification.
+
+**Filtrer avant d'appeler l'IA.** Les courriels automatiques sont écartés par des règles simples : moins de coûts,
+moins de latence, moins de bruit.
+
+**Injection de dépendances.** L'API reçoit Gmail, la mémoire et l'agent via un objet `Services`. Le même code tourne
+avec Gmail réel, en mode démo ou avec des faux objets dans les tests, sans aucun appel réseau.
+
+**Erreurs explicites et cohérence.** `409` si le brouillon est déjà traité ou si un passage est en cours (verrou),
+`502` si Gmail refuse : le statut n'est alors pas modifié, pour qu'une base locale ne contredise jamais la boîte réelle.
+Un courriel en erreur n'arrête pas le passage.
+
+**Un seul déploiement.** Build Docker multi-étapes (Node → Python) : FastAPI sert l'API et l'application Vue compilée,
+avec un utilisateur non-root et les secrets exclus de l'image.
 
 ## API REST
 
@@ -70,31 +116,34 @@ docker-compose.yml        démo, API, vérificateur périodique
 | POST | `/api/courriels/{id}/rejeter` | supprime le brouillon |
 | POST | `/api/agent/cycle` | lance un passage de l'agent |
 
-Codes d'erreur explicites : `404` introuvable, `409` déjà traité ou passage en cours, `422` paramètre invalide,
-`502` erreur Gmail (le statut n'est alors **pas** modifié).
+Codes d'erreur : `404` introuvable, `409` déjà traité ou passage en cours, `422` paramètre invalide, `502` erreur Gmail.
 
-## Sécurité
+## Qualité
 
-- **Brouillons par défaut** : l'envoi automatique doit être activé explicitement.
-- **Double vérification** : même si Claude dit « OK », le code exige une confiance ≥ 0,85, une catégorie autorisée et
-  une priorité non haute. Plaintes et paiements ne partent **jamais** seuls.
-- **Injection de prompt** : le contenu du courriel est traité comme une donnée, jamais comme une instruction.
-- **Pas d'invention** : l'IA répond seulement avec `connaissances.md`, sinon elle transmet à l'équipe.
-- **Pas de double envoi** : un brouillon déjà approuvé ou rejeté renvoie `409`.
-- L'API écoute sur `127.0.0.1` par défaut. Secrets exclus de git et de l'image Docker.
+À chaque push, [GitHub Actions](.github/workflows/ci.yml) vérifie le backend (ruff, pytest), le frontend (types
+TypeScript stricts, Vitest, build) puis construit l'image Docker.
 
-## Mise en production avec Gmail
+```bash
+pytest -q                          # 20 tests : agent, règles de sécurité, API
+ruff check . && ruff format --check .
+cd frontend && npm test            # 8 tests : logique d'affichage, composants
+cd frontend && npm run build       # vérification TypeScript + build
+```
+
+## Brancher une vraie boîte Gmail
 
 1. Clé Claude : https://console.anthropic.com → dans `.env` (copier `.env.example`).
-2. Google Cloud Console : créer un projet, activer **Gmail API**, écran de consentement (utilisateur test),
-   créer un **ID client OAuth « Application de bureau »**, télécharger le JSON en `credentials.json`.
+2. Google Cloud Console : créer un projet, activer **Gmail API**, configurer l'écran de consentement (utilisateur
+   test), créer un **ID client OAuth « Application de bureau »**, télécharger le JSON sous le nom `credentials.json`.
 3. Première connexion (ouvre le navigateur, crée `token.json`) : `python main.py --simulation`
 4. Lancer :
    ```bash
    python -m api                  # interface + API
-   python main.py --boucle 300    # vérification automatique toutes les 5 min (autre terminal)
+   python main.py --boucle 300    # vérification toutes les 5 min (autre terminal)
    ```
    ou `docker compose up --build agent verificateur`.
+
+Par défaut l'agent ne crée que des brouillons. L'envoi automatique s'active explicitement (`ENVOI_AUTO=true`).
 
 ## Développement
 
@@ -103,18 +152,17 @@ python -m api --demo              # terminal 1 : API sur :8000
 cd frontend && npm run dev        # terminal 2 : Vite sur :5173 (rechargement à chaud, proxy vers l'API)
 ```
 
-## Tests
+![Historique filtrable](docs/captures/historique.png)
 
-```bash
-pytest -q                         # 20 tests : agent, sécurité, API
-cd frontend && npm test           # 8 tests : logique d'affichage, composants
-cd frontend && npm run build      # vérification TypeScript stricte + build
-```
+## Feuille de route
 
-## Pistes d'amélioration
+- [ ] Authentification de l'interface pour un déploiement en ligne
+- [ ] Notifications Gmail en temps réel (Pub/Sub) au lieu d'une vérification périodique
+- [ ] Historique complet du fil transmis à Claude pour les longues conversations
+- [ ] Support Outlook (Microsoft Graph)
+- [ ] PostgreSQL et file de tâches pour les gros volumes
 
-- Authentification (OAuth Google ou JWT) pour exposer l'interface en ligne
-- Notifications Gmail en temps réel (Pub/Sub) au lieu d'une vérification périodique
-- Historique du fil complet envoyé à Claude pour les longues conversations
-- Support Outlook (Microsoft Graph)
-- PostgreSQL et file de tâches (Celery/RQ) pour de gros volumes
+## Auteur
+
+**Sidi Jdide**, développeur full stack · Québec, Canada
+[jdide-sidi.com](https://jdide-sidi.com/) · [LinkedIn](https://www.linkedin.com/in/sidi-jdide-68a9041aa)
